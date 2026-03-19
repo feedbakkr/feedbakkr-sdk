@@ -1,0 +1,44 @@
+{
+	"name": "@feedbakkr/sdk",
+	"version": "0.1.0",
+	"description": "Lightweight SDK for submitting messages to Feedbakkr",
+	"license": "MIT",
+	"type": "module",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		}
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"files": ["dist", "README.md", "LICENSE"],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist",
+		"prepublishOnly": "npm run build"
+	},
+	"keywords": [
+		"feedbakkr",
+		"feedback",
+		"sdk",
+		"api-client",
+		"typescript"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/feedbakkr/feedbakkr-sdk"
+	},
+	"homepage": "https://github.com/feedbakkr/feedbakkr-sdk#readme",
+	"bugs": {
+		"url": "https://github.com/feedbakkr/feedbakkr-sdk/issues"
+	},
+	"devDependencies": {
+		"tsup": "^8.0.0",
+		"typescript": "~5.8.0",
+		"vitest": "^3.0.0"
+	}
+}
