@@ -116,30 +116,30 @@ Creates a configured client. The key prefix determines the submission flow:
 - `fbk_ci_*` keys use the client/browser flow
 - `fbk_sk_*` keys use the server flow
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `apiKey` | `string` | *required* | Your Feedbakkr API key |
-| `baseUrl` | `string` | `https://api.feedbakkr.com` | API base URL |
-| `fetch` | `typeof fetch` | `globalThis.fetch` | Custom fetch implementation |
+| Option    | Type           | Default                     | Description                 |
+|-----------|----------------|-----------------------------|-----------------------------|
+| `apiKey`  | `string`       | *required*                  | Your Feedbakkr API key      |
+| `baseUrl` | `string`       | `https://api.feedbakkr.com` | API base URL                |
+| `fetch`   | `typeof fetch` | `globalThis.fetch`          | Custom fetch implementation |
 
 ### `client.submit(input)`
 
 Submit a message to a channel.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `channelId` | `string` | Target channel ID |
-| `fields` | `Record<string, unknown>` | Field values matching the channel schema |
+| Field       | Type                      | Description                              |
+|-------------|---------------------------|------------------------------------------|
+| `channelId` | `string`                  | Target channel ID                        |
+| `fields`    | `Record<string, unknown>` | Field values matching the channel schema |
 
 Returns `SubmitMessageResult`:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Message ID (ULID) |
-| `environment` | `"dev" \| "live"` | Environment the message was submitted to |
-| `channelId` | `string` | Channel ID |
-| `lifecycleState` | `"active" \| "quota_held"` | Message lifecycle state |
-| `createdAt` | `string` | ISO 8601 timestamp |
+| Field            | Type                       | Description                              |
+|------------------|----------------------------|------------------------------------------|
+| `id`             | `string`                   | Message ID (ULID)                        |
+| `environment`    | `"dev" \| "live"`          | Environment the message was submitted to |
+| `channelId`      | `string`                   | Channel ID                               |
+| `lifecycleState` | `"active" \| "quota_held"` | Message lifecycle state                  |
+| `createdAt`      | `string`                   | ISO 8601 timestamp                       |
 
 ## Type generation
 
