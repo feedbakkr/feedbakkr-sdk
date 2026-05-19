@@ -19,7 +19,16 @@
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf dist",
-		"prepublishOnly": "npm run build"
+		"security:audit": "npm audit --audit-level=high",
+		"security:audit:moderate": "npm audit --audit-level=moderate",
+		"security:osv": "osv-scanner --recursive .",
+		"security:scan": "npm run security:audit",
+		"security:scan:full": "npm run security:audit:moderate && npm run security:osv",
+		"verify:publish": "npm test && npm run typecheck && npm run security:audit && npm run build && npm pack --dry-run",
+		"prepublishOnly": "npm run verify:publish"
+	},
+	"engines": {
+		"node": ">=22"
 	},
 	"keywords": [
 		"feedbakkr",
