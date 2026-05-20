@@ -13,8 +13,7 @@
 		},
 		{
 			"matchUpdateTypes": ["major"],
-			"groupName": "major dependency updates",
-			"separateMajorMinor": true
+			"groupName": "major dependency updates"
 		},
 		{
 			"matchDepTypes": ["devDependencies"],
