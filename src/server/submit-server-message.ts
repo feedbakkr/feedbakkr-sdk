@@ -1,5 +1,6 @@
 import { FeedbakkrError } from "../shared/errors.js";
 import { apiPost } from "../shared/fetch.js";
+import { resolveSubmitPath } from "../shared/submit-url.js";
 import type { FeedbakkrConfig, SubmitMessageInput, SubmitMessageResult } from "../shared/types.js";
 
 /**
@@ -17,18 +18,14 @@ export async function submitServerMessage(
 	if (!config.apiKey) {
 		throw FeedbakkrError.configError("apiKey is required");
 	}
-	if (!input.channelId) {
-		throw FeedbakkrError.configError("channelId is required");
-	}
 
 	return apiPost<SubmitMessageResult>({
 		apiKey: config.apiKey,
 		baseUrl: config.baseUrl,
 		fetch: config.fetch,
-		path: "/v1/submit",
-		body: {
-			channelId: input.channelId,
-			fields: input.fields,
-		},
+		// Throws config error if neither channelSlug nor channelId was provided.
+		path: resolveSubmitPath(input),
+		// Channel addressing lives in the URL — body carries only fields.
+		body: { fields: input.fields },
 	});
 }

@@ -1,6 +1,6 @@
 {
 	"name": "@feedbakkr/sdk",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Lightweight SDK for submitting messages to Feedbakkr",
 	"license": "MIT",
 	"type": "module",

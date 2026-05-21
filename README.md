@@ -18,7 +18,7 @@ const feedbakkr = createFeedbakkrClient({
 });
 
 const result = await feedbakkr.submit({
-  channelId: "your-channel-id",
+  channelSlug: "contact-form", // or channelId
   fields: {
     name: "Jane Doe",
     email: "jane@example.com",
@@ -44,7 +44,7 @@ const feedbakkr = createFeedbakkrClient({
 
 // In your API handler:
 const result = await feedbakkr.submit({
-  channelId: "01ABC...",
+  channelSlug: "contact-form",
   fields: { name: req.body.name, email: req.body.email },
 });
 ```
@@ -61,7 +61,7 @@ const feedbakkr = createFeedbakkrClient({
 });
 
 const result = await feedbakkr.submit({
-  channelId: "01ABC...",
+  channelSlug: "contact-form",
   fields: { name: "Jane", message: "Hello!" },
 });
 ```
@@ -75,7 +75,7 @@ import { submitServerMessage, submitClientMessage } from "@feedbakkr/sdk";
 
 const result = await submitServerMessage(
   { apiKey: "fbk_sk_live_..." },
-  { channelId: "01ABC...", fields: { name: "Jane" } },
+  { channelSlug: "contact-form", fields: { name: "Jane" } },
 );
 ```
 
@@ -124,12 +124,13 @@ Creates a configured client. The key prefix determines the submission flow:
 
 ### `client.submit(input)`
 
-Submit a message to a channel.
+Submit a message to a channel. Provide exactly one of `channelSlug` or `channelId`.
 
-| Field       | Type                      | Description                              |
-|-------------|---------------------------|------------------------------------------|
-| `channelId` | `string`                  | Target channel ID                        |
-| `fields`    | `Record<string, unknown>` | Field values matching the channel schema |
+| Field         | Type                      | Description                                          |
+|---------------|---------------------------|------------------------------------------------------|
+| `channelSlug` | `string` *(optional)*     | Target channel slug (preferred). Either this or `channelId`. |
+| `channelId`   | `string` *(optional)*     | Target channel ID (ULID). Either this or `channelSlug`. |
+| `fields`      | `Record<string, unknown>` | Field values matching the channel schema             |
 
 Returns `SubmitMessageResult`:
 
@@ -149,7 +150,7 @@ Use [@feedbakkr/cli](https://github.com/feedbakkr/feedbakkr-cli) to generate Typ
 import type { ContactFormFields } from "./generated/contact-form";
 
 await feedbakkr.submit({
-  channelId: "01ABC...",
+  channelSlug: "contact-form",
   fields: { name: "Jane", email: "jane@example.com" } satisfies ContactFormFields,
 });
 ```

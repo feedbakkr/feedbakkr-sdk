@@ -14,10 +14,21 @@ export interface FeedbakkrConfig {
 	fetch?: typeof globalThis.fetch;
 }
 
-/** Input for submitting a message. */
+/**
+ * Input for submitting a message. Exactly one of `channelSlug` or `channelId`
+ * must be provided; whichever you supply chooses the matching server route.
+ *
+ * - `channelSlug` → `POST /v1/submit/{channelSlug}` (the primary external path)
+ * - `channelId`   → `POST /v1/channels/{channelId}/submit` (REST-conventional)
+ *
+ * Both routes share the same auth + validation + delivery pipeline; pick
+ * whichever you already have in hand.
+ */
 export interface SubmitMessageInput {
-	/** The channel ID to submit the message to. */
-	channelId: string;
+	/** The channel slug (e.g. `"contact-form"`). Either this or `channelId`. */
+	channelSlug?: string;
+	/** The channel ID (ULID). Either this or `channelSlug`. */
+	channelId?: string;
 	/** Field values matching the channel's published schema. */
 	fields: Record<string, unknown>;
 }

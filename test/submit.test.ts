@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createFeedbakkrClient,
+	FeedbakkrError,
 	submitClientMessage,
 	submitServerMessage,
-	FeedbakkrError,
 } from "../src/index.js";
 import type { FeedbakkrConfig, SubmitMessageResult } from "../src/index.js";
 
@@ -28,33 +28,70 @@ const BASE_CONFIG: FeedbakkrConfig = {
 	baseUrl: "https://api.test.com",
 };
 
-const BASE_INPUT = {
+const BY_SLUG = {
+	channelSlug: "contact-form",
+	fields: { name: "Jane", message: "Hello!" },
+};
+
+const BY_ID = {
 	channelId: "ch-1",
 	fields: { name: "Jane", message: "Hello!" },
 };
 
 describe("submitServerMessage", () => {
-	it("sends correct request and returns result on success", async () => {
+	it("hits /v1/submit/{slug} when channelSlug is provided", async () => {
 		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
-		const result = await submitServerMessage(
-			{ ...BASE_CONFIG, fetch: fetchFn },
-			BASE_INPUT,
-		);
+		const result = await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BY_SLUG);
 
 		expect(result).toEqual(SUCCESS_RESPONSE);
 		expect(fetchFn).toHaveBeenCalledWith(
-			"https://api.test.com/v1/submit",
+			"https://api.test.com/v1/submit/contact-form",
 			expect.objectContaining({
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Authorization: "Bearer fbk_sk_live_test-key",
 				},
-				body: JSON.stringify({
-					channelId: "ch-1",
-					fields: { name: "Jane", message: "Hello!" },
-				}),
+				body: JSON.stringify({ fields: BY_SLUG.fields }),
 			}),
+		);
+	});
+
+	it("hits /v1/channels/{id}/submit when channelId is provided", async () => {
+		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
+		await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BY_ID);
+
+		expect(fetchFn).toHaveBeenCalledWith(
+			"https://api.test.com/v1/channels/ch-1/submit",
+			expect.objectContaining({
+				body: JSON.stringify({ fields: BY_ID.fields }),
+			}),
+		);
+	});
+
+	it("URL-encodes the channel identifier", async () => {
+		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
+		await submitServerMessage(
+			{ ...BASE_CONFIG, fetch: fetchFn },
+			{ channelSlug: "needs encoding!", fields: {} },
+		);
+
+		expect(fetchFn).toHaveBeenCalledWith(
+			"https://api.test.com/v1/submit/needs%20encoding!",
+			expect.anything(),
+		);
+	});
+
+	it("prefers channelSlug when both are provided", async () => {
+		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
+		await submitServerMessage(
+			{ ...BASE_CONFIG, fetch: fetchFn },
+			{ channelSlug: "contact-form", channelId: "ch-1", fields: {} },
+		);
+
+		expect(fetchFn).toHaveBeenCalledWith(
+			"https://api.test.com/v1/submit/contact-form",
+			expect.anything(),
 		);
 	});
 
@@ -66,11 +103,11 @@ describe("submitServerMessage", () => {
 		});
 
 		await expect(
-			submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BASE_INPUT),
+			submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BY_ID),
 		).rejects.toThrow(FeedbakkrError);
 
 		try {
-			await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BASE_INPUT);
+			await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BY_ID);
 		} catch (err) {
 			const e = err as FeedbakkrError;
 			expect(e.kind).toBe("api");
@@ -88,7 +125,7 @@ describe("submitServerMessage", () => {
 		});
 
 		try {
-			await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BASE_INPUT);
+			await submitServerMessage({ ...BASE_CONFIG, fetch: fetchFn }, BY_ID);
 		} catch (err) {
 			const e = err as FeedbakkrError;
 			expect(e.kind).toBe("api");
@@ -103,7 +140,7 @@ describe("submitServerMessage", () => {
 		try {
 			await submitServerMessage(
 				{ ...BASE_CONFIG, fetch: fetchFn as typeof globalThis.fetch },
-				BASE_INPUT,
+				BY_ID,
 			);
 		} catch (err) {
 			const e = err as FeedbakkrError;
@@ -114,21 +151,21 @@ describe("submitServerMessage", () => {
 
 	it("throws FeedbakkrError with kind=config when apiKey is missing", async () => {
 		await expect(
-			submitServerMessage({ apiKey: "", fetch: mockFetch(201, {}) }, BASE_INPUT),
+			submitServerMessage({ apiKey: "", fetch: mockFetch(201, {}) }, BY_ID),
 		).rejects.toThrow(FeedbakkrError);
 
 		try {
-			await submitServerMessage({ apiKey: "", fetch: mockFetch(201, {}) }, BASE_INPUT);
+			await submitServerMessage({ apiKey: "", fetch: mockFetch(201, {}) }, BY_ID);
 		} catch (err) {
 			expect((err as FeedbakkrError).kind).toBe("config");
 		}
 	});
 
-	it("throws FeedbakkrError with kind=config when channelId is missing", async () => {
+	it("throws FeedbakkrError with kind=config when neither channelSlug nor channelId is provided", async () => {
 		try {
 			await submitServerMessage(
 				{ ...BASE_CONFIG, fetch: mockFetch(201, {}) },
-				{ channelId: "", fields: {} },
+				{ fields: {} },
 			);
 		} catch (err) {
 			expect((err as FeedbakkrError).kind).toBe("config");
@@ -145,7 +182,7 @@ describe("submitServerMessage", () => {
 		try {
 			await submitServerMessage(
 				{ ...BASE_CONFIG, fetch: fetchFn as typeof globalThis.fetch },
-				BASE_INPUT,
+				BY_ID,
 			);
 		} catch (err) {
 			const e = err as FeedbakkrError;
@@ -157,21 +194,35 @@ describe("submitServerMessage", () => {
 });
 
 describe("submitClientMessage", () => {
-	it("sends correct request with client key", async () => {
+	it("hits the slug URL with client key auth", async () => {
 		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
 		const result = await submitClientMessage(
 			{ apiKey: "fbk_ci_live_test-key", baseUrl: "https://api.test.com", fetch: fetchFn },
-			BASE_INPUT,
+			BY_SLUG,
 		);
 
 		expect(result).toEqual(SUCCESS_RESPONSE);
 		expect(fetchFn).toHaveBeenCalledWith(
-			"https://api.test.com/v1/submit",
+			"https://api.test.com/v1/submit/contact-form",
 			expect.objectContaining({
 				headers: expect.objectContaining({
 					Authorization: "Bearer fbk_ci_live_test-key",
 				}),
+				body: JSON.stringify({ fields: BY_SLUG.fields }),
 			}),
+		);
+	});
+
+	it("hits the id URL when channelId is provided", async () => {
+		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
+		await submitClientMessage(
+			{ apiKey: "fbk_ci_live_test-key", baseUrl: "https://api.test.com", fetch: fetchFn },
+			BY_ID,
+		);
+
+		expect(fetchFn).toHaveBeenCalledWith(
+			"https://api.test.com/v1/channels/ch-1/submit",
+			expect.anything(),
 		);
 	});
 });
@@ -185,7 +236,7 @@ describe("createFeedbakkrClient", () => {
 			fetch: fetchFn,
 		});
 
-		const result = await client.submit(BASE_INPUT);
+		const result = await client.submit(BY_ID);
 		expect(result).toEqual(SUCCESS_RESPONSE);
 	});
 
@@ -197,7 +248,7 @@ describe("createFeedbakkrClient", () => {
 			fetch: fetchFn,
 		});
 
-		const result = await client.submit(BASE_INPUT);
+		const result = await client.submit(BY_SLUG);
 		expect(result).toEqual(SUCCESS_RESPONSE);
 	});
 
@@ -208,10 +259,10 @@ describe("createFeedbakkrClient", () => {
 	it("uses default base URL when not provided", async () => {
 		const fetchFn = mockFetch(201, SUCCESS_RESPONSE);
 		const client = createFeedbakkrClient({ apiKey: "fbk_sk_live_x", fetch: fetchFn });
-		await client.submit(BASE_INPUT);
+		await client.submit(BY_SLUG);
 
 		expect(fetchFn).toHaveBeenCalledWith(
-			"https://api.feedbakkr.com/v1/submit",
+			"https://api.feedbakkr.com/v1/submit/contact-form",
 			expect.anything(),
 		);
 	});
@@ -223,10 +274,10 @@ describe("createFeedbakkrClient", () => {
 			baseUrl: "https://api.test.com/",
 			fetch: fetchFn,
 		});
-		await client.submit(BASE_INPUT);
+		await client.submit(BY_SLUG);
 
 		expect(fetchFn).toHaveBeenCalledWith(
-			"https://api.test.com/v1/submit",
+			"https://api.test.com/v1/submit/contact-form",
 			expect.anything(),
 		);
 	});
