@@ -1,7 +1,7 @@
 {
 	"name": "@feedbakkr/sdk",
-	"version": "0.1.2",
-	"description": "Lightweight SDK for submitting messages to Feedbakkr",
+	"version": "0.4.0",
+	"description": "Official JavaScript / TypeScript SDK for Feedbakkr — submit feedback messages from any modern runtime.",
 	"license": "MIT",
 	"type": "module",
 	"exports": {
